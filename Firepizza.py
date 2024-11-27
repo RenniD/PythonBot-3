@@ -8,7 +8,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
 # Стадії конверсії
 NUMBER, DELIVERY_TIME, FORM_OF_DELIVERY, DELIVERY, PAY, ORDER = range(6)
 
-app = ApplicationBuilder().token('7407148766:AAEZoEiCxU43aOPNU2VbZWI1llqN7PWkTf8').build()
+app = ApplicationBuilder().token('7823429661:AAEaErk_RdI_Aj7FJvgmuRYxzI1k2-nHmus').build()
 
 # ---------------------------------------------------
 
