@@ -1,4 +1,3 @@
-from getpass import fallback_getpass
 
 # 7823429661:AAEaErk_RdI_Aj7FJvgmuRYxzI1k2-nHmus
 
@@ -7,25 +6,11 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
     MessageHandler, filters
 
 # Стадії конверсії
-DELIVERY_TIME, FORM_OF_DELIVERY, DELIVERY, PAY, ORDER = range(5)
+NUMBER, DELIVERY_TIME, FORM_OF_DELIVERY, DELIVERY, PAY, ORDER = range(6)
 
-app = ApplicationBuilder().token('7823429661:AAEaErk_RdI_Aj7FJvgmuRYxzI1k2-nHmus').build()
+app = ApplicationBuilder().token('7407148766:AAEZoEiCxU43aOPNU2VbZWI1llqN7PWkTf8').build()
 
 # ---------------------------------------------------
-async def start_command(update, context):
-    welcome_text = (
-        "Вас приветствует служба доставки еды 'FirePizza'!\n"
-        "Здесь вы можете ознакомится с нашим меню, акциями, оформить заказ, узнать график работы,контакты, ознакомится с услугами доставки. \n"
-        "Попробуйте следующие команды:\n"
-        "/contacts\n"
-        "/delivery\n"
-        "/menu\n"
-        "/ordering_food\n"
-        "/work_schedule\n"
-        "/stocks\n"
-    )
-    await update.message.reply_text(welcome_text)
-
 
 async def contacts_command(update, context):
     contacts_text = (
@@ -45,7 +30,7 @@ async def delivery_command(update, context):
     )
     await update.message.reply_text(delivery_text)
 
-    async def work_schedule_command(update, context):
+async def work_schedule_command(update, context):
         work_schedule_text = (
             "Прием заказов осуществляется с 10:00 до 20:00.Выдача заказов - с 11:15 до 21:00.\n"
         )
@@ -93,6 +78,8 @@ async def button_handler(update, context):
                 "форму оплатить заказ: наличными или картой,\n"
                 "на какое время вам удобно получить заказ \n"
             )
+                    print("Потрапив у стан NUMBER")  # Відладкове повідомлення
+                    return NUMBER
 
         elif query.data == "stocks":
                     await query.message.reply_text("При заказе от 500 грн предоставляется скидка 50 грн на доставку.\n"
@@ -158,22 +145,23 @@ async def cancel(update,context):
 
 #Добавление ConversationHandler для заказа
 booking_handler = ConversationHandler(
-    entry_points=[CallbackQueryHandler(button_handler, pattern="^book$")],
+    entry_points=[CallbackQueryHandler(button_handler, pattern="^ordering_food$")],
     states={
+    NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, number)],
     DELIVERY_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, delivery_time)],
     FORM_OF_DELIVERY: [MessageHandler(filters.TEXT & ~filters.COMMAND, form_of_delivery)],
     DELIVERY: [MessageHandler(filters.TEXT & ~filters.COMMAND, delivery)],
     PAY: [MessageHandler(filters.TEXT & ~filters.COMMAND, pay)],
     ORDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, order)],
     },
-    fallbacks =[CommandHandler("cancel", cancel)],
+    fallbacks=[CommandHandler("cancel", cancel)],
+    per_message=True
 )
 
 app.add_handler(booking_handler)
 
 def main():
     app.add_handler(CommandHandler("start", start_command))
-    app.add_handler(CallbackQueryHandler(button_handler))
     app.run_polling()
 
 
