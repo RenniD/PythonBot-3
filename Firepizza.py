@@ -1,7 +1,7 @@
 
 # 7823429661:AAEaErk_RdI_Aj7FJvgmuRYxzI1k2-nHmus
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import Update, InlineKeyboardButton, InputMediaPhoto, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, ConversationHandler, \
     MessageHandler, filters
 
@@ -51,7 +51,7 @@ async def start_command(update,context):
         await update.message.reply_text(
         "Добро пожаловать Вас приветствует служба доставки еды 'FirePizza'!\n"
         "Здесь вы можете ознакомится с нашим меню, акциями, оформить заказ, узнать график работы,контакты, ознакомится с услугами доставки.\n",
-        reply_markup=markup )
+        reply_markup=markup)
 
 async def button_handler(update, context):
         query = update.callback_query
@@ -60,41 +60,43 @@ async def button_handler(update, context):
         if query.data == "work_schedule":
             await query.message.reply_text(
             "Прием заказов осуществляется с 10:00 до 20:00.Выдача заказов - с 11:15 до 21:00.\n"
-        )
+             )
         elif query.data == "delivery":
             await query.message.reply_text("Приднепровск - доставка 50 грн.\n"
         "Цапли, Рыбальское - 100-150 грн (стоимость уточняется при заказе)\n."
         "Любимовка - 200 грн.\n"
         "Победа 6 - 150 грн.\n"
         "При заказе от 500 грн предоставляется скидка 50 грн на доставку.\n"
-       )
+             )
         elif query.data == "contacts":
             await query.message.reply_text("Контактний номер: +380675994939, +380935994939, +380665994939\n"
         "Адрес:Вознюка 1в,Днепр"
-    )
+             )
         elif query.data == "ordering_food":
                     await query.message.reply_text("Для оформления заказа укажите пожалуйста: адрес доставки,\n"
                 "ваш номер телефона для связи с курьером,\n"
                 "форму оплатить заказ: наличными или картой,\n"
                 "на какое время вам удобно получить заказ \n"
-            )
+                        )
                     print("Потрапив у стан NUMBER")  # Відладкове повідомлення
                     return NUMBER
 
-        elif query.data == "stocks":
-                    await query.message.reply_text("При заказе от 500 грн предоставляется скидка 50 грн на доставку.\n"
-                "При заказе от 500 грн доставка по г. Приднепровск - бесплатная.\n"
-                "Празднуй день рождения с выгодой - именинникам дарим скидку 10% на все меню. Скидка действует за два дня до и два дня после вашего Дня рождения. Для получения скидки нужно иметь при себе оригинал документа, подтверждающего дату рождения.\n"
-                "*Скидка не суммируется с другими предложениями.\n"
-            )
 
-        elif query.data == "menu":
-                    await query.message.reply_text("Пиццы \n"
-                "Пиццы 40 см\n"
-                "Кальцоне\n"
-                "Бургери\n"
-                "Картошка и курица (фри)\n"
-            )
+        elif query.data == "stocks":
+            room_image_url = "img/234.png"
+            caption = ("При заказе от 500 грн предоставляется скидка 50 грн на доставку.\n"
+                "При заказе от 500 грн доставка по г. Приднепровск - бесплатная.\n")
+            room_image_url2 ="img/Birthday 1.png"
+            caption2 = ("Празднуй день рождения с выгодой - именинникам дарим скидку 10% на все меню. Скидка действует за два дня до и два дня после вашего Дня рождения. Для получения скидки нужно иметь при себе оригинал документа, подтверждающего дату рождения.\n"
+                "*Скидка не суммируется с другими предложениями.\n")
+            try:
+                await query.message.reply_photo(photo=room_image_url, caption=caption)
+            except FileNotFoundError as e:
+                await query.message.reply_text(f"Ошибка: файл {e.filename} не найдено.")
+            except Exception as e:
+                await query.message.reply_text(f"Возникла ошибка: {str(e)} ")
+
+# ---------------------------------------------------
 async def number(update,context):
     context.user_data['number'] = update.message.text
     await update.message.reply_text("Введите ваш номер телефона для связи (например, +380951111111):")
@@ -142,6 +144,7 @@ async def order (update,context):
 async def cancel(update,context):
     await update.message.reply_text("Заказ отменен.Возращайтесь, когда будете готовы!",reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
+# ---------------------------------------------------
 
 #Добавление ConversationHandler для заказа
 booking_handler = ConversationHandler(
@@ -157,6 +160,26 @@ booking_handler = ConversationHandler(
     fallbacks=[CommandHandler("cancel", cancel)],
     per_message=True
 )
+
+#-------------------------------------------------------------
+async def send_photos(update,context):
+# Пути к локальным файлам
+    room_image_url = "img/234.png"
+    caption = ("При заказе от 500 грн предоставляется скидка 50 грн на доставку.\n"
+               "При заказе от 500 грн доставка по г. Приднепровск - бесплатная.\n")
+    room_image_url2 = "img/Birthday 1.png"
+    caption2 = ("Празднуй день рождения с выгодой - именинникам дарим скидку 10% на все меню. Скидка действует за два дня до и два дня после вашего Дня рождения. Для получения скидки нужно иметь при себе оригинал документа, подтверждающего дату рождения.\n"
+    "*Скидка не суммируется с другими предложениями.\n")
+    try:
+        await update.message.reply_photo(photo=room_image_url, caption=caption)
+    except FileNotFoundError as e:
+        await update.message.reply_text(f"Ошибка: файл {e.filename} не найдено.")
+    except Exception as e:
+        await update.message.reply_text(f"Возникла ошибка: {str(e)} ")
+
+# добавление обработчика команд
+app.add_handler(CommandHandler("sendphotos", send_photos))
+
 
 app.add_handler(booking_handler)
 
