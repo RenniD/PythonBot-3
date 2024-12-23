@@ -1,24 +1,121 @@
 
-# 7823429661:AAEaErk_RdI_Aj7FJvgmuRYxzI1k2-nHmus
-
 from telegram import Update, InlineKeyboardButton, InputMediaPhoto, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes, ConversationHandler, \
     MessageHandler, filters
+import sqlite3
+import asyncio
 
 # Стадії конверсії
 NUMBER, DELIVERY_TIME, FORM_OF_DELIVERY, DELIVERY, PAY, ORDER = range(6)
 
 app = ApplicationBuilder().token('7823429661:AAEaErk_RdI_Aj7FJvgmuRYxzI1k2-nHmus').build()
 
+
+#______________________________________________
+def setup_database():
+    connection = sqlite3.connect("database.db")
+    cursor = connection.cursor()
+
+    # Создание таблицы пользователей
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    chat_id INTEGER NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+    )
+    """)
+
+    # Создание таблицы заказа
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS bookings (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     user_id INTEGER NOT NULL,
+     number TEXT NOT NULL,
+     delivery_time TEXT NOT NULL,
+     form_of_delivery TEXT NOT NULL,
+     delivery TEXT NOT NULL,
+     pay TEXT NOT NULL,
+     order_ TEXT NOT NULL,
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     FOREIGN KEY (user_id) REFERENCES user (id)
+    )
+    """)
+    connection.commit()
+    connection.close()
+    print("База данних успешно настроена")
+
+def add_user(username, chat_id):
+    connection = sqlite3.connect("database.db")
+    cursor = connection.cursor()
+    try:
+        cursor.execute("""
+        INSERT OR IGNORE INTO user (username, chat_id)
+        VALUES (?, ?)
+        """, (username, chat_id))
+        connection.commit()
+        print(f"Пользователь {username} успешно добавлен.")
+    except sqlite3.Error as e:
+        print(f"Ошибка при добавлении пользователя: {e}")
+    finally:
+        connection.close()
+
+def add_booking(chat_id, number, delivery_time, form_of_delivery, delivery, pay, order_):
+    connection = sqlite3.connect("database.db")
+    cursor = connection.cursor()
+    try:
+        #Получение user_id за chat_id
+        cursor.execute("SELECT id FROM user WHERE chat_id =?", (chat_id))
+        user_id = cursor.fetchone()
+        if user_id:
+            user_id = user_id[0]
+            cursor.execute("""
+            INSERT INTO bookings (chat_id, number, delivery_time, form_of_delivery, delivery, pay, order_)
+            VALUES(?, ?, ?, ?, ?, ?, ?) 
+            """, (chat_id, number, delivery_time, form_of_delivery, delivery, pay, order_))
+            connection.commit()
+            print("Бронирование успешно добавлено.")
+        else:
+            print("Пользователя не найдено в базе.")
+    except sqlite3.Error as e:
+        print(f"Ошибка при добавлении пользователя: {e}")
+    finally:
+        connection.close()
+
+def get_all_users():
+    connection = sqlite3.connect("database.db")
+    cursor = connection.cursor()
+    cursor.execute("SELECT chat_id FROM users")
+    users = cursor.fetchall()
+    connection.close()
+    return [user[0] for user in users]
+async def broadcast_message(update, context):
+    users = get_all_users()
+    messages = "Рассылка для всех пользователей!"
+    successful = 0
+    failed = 0
+
+    for chat_id in users:
+        try:
+            await context.bot.send_massage(chat_id=chat_id, text=messages)
+            successful += 1
+        except Exception as e:
+            print(f"Не удалось отправить сообщение пользователю {chat_id}: {e}")
+            failed += 1
+        await asyncio.sleep(0.1)  # Добавить задержку для избежания лимиту Telegram
+
+    await update.message.reply_text(f"Рассылка закончена.Успешно:{successful}, Неудачно:{failed}")
+
+
 # ---------------------------------------------------
 
 async def contacts_command(update, context):
+
     contacts_text = (
         "Контактний номер: +380675994939, +380935994939, +380665994939\n"
         "Адрес:Вознюка 1в,Днепр"
     )
     await update.message.reply_text(contacts_text)
-
 
 async def delivery_command(update, context):
     delivery_text = (
@@ -36,7 +133,14 @@ async def work_schedule_command(update, context):
         )
         await update.message.reply_text(work_schedule_text)
 #--------------------------------------------------------------------------------------------------------------
+# Команда/start c cохранением пользователя
 async def start_command(update,context):
+        username = update.effective_user.username or "NoUsername"
+        chat_id = update.effective_user.id
+
+        # Добавление пользователя в базу данних
+        add_user(username, chat_id)
+
         inline_keyboard = [
             [InlineKeyboardButton("Меню", url="https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MTQwODUxMjg1MzQ2Mzg4?story_media_id=3469935359620179540&igsh=MTZqdm1mN3Z1dnp1dQ==")],
             [InlineKeyboardButton("Акции",callback_data="stocks")],
@@ -127,7 +231,19 @@ async def pay (update,context):
     return ORDER
 
 async def order (update,context):
+    chat_id = update.effective_user.id
     context.user_data['order'] = update.message.text
+
+    # Сохранение в базе данных
+    add_booking(
+        chat_id,
+        context.user_data['number'],
+        context.user_data['delivery_time'],
+        context.user_data['form_of_delivery'],
+        context.user_data['delivery'],
+        context.user_data['pay'],
+        context.user_data['order'],
+    )
     booking_details = (
     f"Ваши данные для заказа:\n"
     f"- номер телефона: {context.user_data['number']}\n"
@@ -136,7 +252,7 @@ async def order (update,context):
     f"- адрес доставки: {context.user_data['delivery']}\n"
     f"- форму оплаты: {context.user_data['pay']}\n"
     f"- заказ: {context.user_data['order']}\n"
-    "Если все верно, наш администратор свяжется с вами для подстверждения."
+    "Если все верно, наш администратор свяжется с вами для подтверждения."
     )
 
     await update.message.reply_text(booking_details, reply_markup=ReplyKeyboardRemove())
@@ -144,7 +260,9 @@ async def order (update,context):
 async def cancel(update,context):
     await update.message.reply_text("Заказ отменен.Возращайтесь, когда будете готовы!",reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
-# ---------------------------------------------------
+
+# Инициализация базы данных ----------
+setup_database()
 
 #Добавление ConversationHandler для заказа
 booking_handler = ConversationHandler(
