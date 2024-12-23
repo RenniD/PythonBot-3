@@ -8,8 +8,9 @@ import asyncio
 # Стадії конверсії
 NUMBER, DELIVERY_TIME, FORM_OF_DELIVERY, DELIVERY, PAY, ORDER = range(6)
 
-app = ApplicationBuilder().token('7823429661:AAEaErk_RdI_Aj7FJvgmuRYxzI1k2-nHmus').build()
 
+
+app = ApplicationBuilder().token('7823429661:AAEaErk_RdI_Aj7FJvgmuRYxzI1k2-nHmus').build()
 
 #______________________________________________
 def setup_database():
@@ -116,16 +117,6 @@ async def contacts_command(update, context):
         "Адрес:Вознюка 1в,Днепр"
     )
     await update.message.reply_text(contacts_text)
-
-async def delivery_command(update, context):
-    delivery_text = (
-        "Приднепровск - доставка 50 грн.\n"
-        "Цапли, Рыбальское - 100-150 грн (стоимость уточняется при заказе)\n."
-        "Любимовка - 200 грн.\n"
-        "Победа 6 - 150 грн.\n"
-        "При заказе от 500 грн предоставляется скидка 50 грн на доставку.\n"
-    )
-    await update.message.reply_text(delivery_text)
 
 async def work_schedule_command(update, context):
         work_schedule_text = (
@@ -297,6 +288,8 @@ async def send_photos(update,context):
 
 # добавление обработчика команд
 app.add_handler(CommandHandler("sendphotos", send_photos))
+app.add_handler(CommandHandler("contacts", contacts_command))
+app.add_handler(CommandHandler("work_schedule", work_schedule_command))
 
 
 app.add_handler(booking_handler)
