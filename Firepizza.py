@@ -10,7 +10,7 @@ NUMBER, DELIVERY_TIME, FORM_OF_DELIVERY, DELIVERY, PAY, ORDER = range(6)
 
 
 
-app = ApplicationBuilder().token('7823429661:AAEaErk_RdI_Aj7FJvgmuRYxzI1k2-nHmus').build()
+app = ApplicationBuilder().token('7407148766:AAFLNMOcY13rEBo_xtbQ0jgM7QLUPKkKtVU').build()
 
 #______________________________________________
 def setup_database():
@@ -156,6 +156,8 @@ async def button_handler(update, context):
             await query.message.reply_text(
             "Прием заказов осуществляется с 10:00 до 20:00.Выдача заказов - с 11:15 до 21:00.\n"
              )
+            return ConversationHandler.END
+
         elif query.data == "delivery":
             await query.message.reply_text("Приднепровск - доставка 50 грн.\n"
         "Цапли, Рыбальское - 100-150 грн (стоимость уточняется при заказе)\n."
@@ -163,10 +165,14 @@ async def button_handler(update, context):
         "Победа 6 - 150 грн.\n"
         "При заказе от 500 грн предоставляется скидка 50 грн на доставку.\n"
              )
+            return ConversationHandler.END
+
         elif query.data == "contacts":
             await query.message.reply_text("Контактний номер: +380675994939, +380935994939, +380665994939\n"
         "Адрес:Вознюка 1в,Днепр"
              )
+            return ConversationHandler.END
+
         elif query.data == "ordering_food":
                     await query.message.reply_text("Для оформления заказа укажите пожалуйста: адрес доставки,\n"
                 "ваш номер телефона для связи с курьером,\n"
@@ -190,6 +196,7 @@ async def button_handler(update, context):
                 await query.message.reply_text(f"Ошибка: файл {e.filename} не найдено.")
             except Exception as e:
                 await query.message.reply_text(f"Возникла ошибка: {str(e)} ")
+        return ConversationHandler.END
 
 # ---------------------------------------------------
 async def number(update,context):
@@ -257,7 +264,7 @@ setup_database()
 
 #Добавление ConversationHandler для заказа
 booking_handler = ConversationHandler(
-    entry_points=[CallbackQueryHandler(button_handler, pattern="^ordering_food$")],
+    entry_points=[CallbackQueryHandler(button_handler, pattern="^(ordering_food|work_schedule|delivery|contacts|stocks)$")],
     states={
     NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, number)],
     DELIVERY_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, delivery_time)],
@@ -267,7 +274,7 @@ booking_handler = ConversationHandler(
     ORDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, order)],
     },
     fallbacks=[CommandHandler("cancel", cancel)],
-    per_message=True
+    per_user=True
 )
 
 #-------------------------------------------------------------
